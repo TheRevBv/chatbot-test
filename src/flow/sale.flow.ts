@@ -4,6 +4,7 @@ import welcomeFlow from "./welcome.flow";
 import pixcua from "@services/pixcua";
 import helloFlow from "./hello.flow";
 import idleFlow from "./idle.flow";
+import pedidosFlow from "./pedidos.flow";
 
 const enum ACTIONS {
   ORDER = "pedido",
@@ -13,84 +14,24 @@ const enum ACTIONS {
 /**
  * Un flujo conversacion que es por defecto cunado no se contiene palabras claves en otros flujos
  */
-export default function saleFlow(): BotWhatsapp.IMethodsChain {
-  const salesFlow = BotWhatsapp.addKeyword(BotWhatsapp.EVENTS.WELCOME)
-    .addAnswer(
-      "Hola! Soy un bot de ventas, ¿En qué puedo ayudarte?",
-      { capture: true },
-      async (ctx, { state, fallBack, gotoFlow }) => {
-        switch (ctx.body.toLowerCase()) {
-          case ACTIONS.ORDER:
-            //Actualiza el estado de la conversación o mandar a otro flujo
-            await state.update({ action: ACTIONS.ORDER });
-            // await gotoFlow(idleFlow);
-            break;
-          case ACTIONS.BILL:
-            //Actualiza el estado de la conversación o mandar a otro flujo
-            await state.update({ action: ACTIONS.BILL });
-            // await gotoFlow(idleFlow);
-            break;
-          default:
-            return fallBack(
-              "No entiendo tu solicitud, ingresa un pedido o factura"
-            );
-        }
-      }
-    )
-    .addAnswer("¡Genial! Procesando tu solicitud")
-    .addAction(async (ctx, { flowDynamic, state }) => {
-      const empresaSvc = new pixcua.empresa();
-      const empresas = await empresaSvc.getEmpresas();
+export default BotWhatsapp.addKeyword(BotWhatsapp.EVENTS.WELCOME).addAnswer(
+  "Hola! Soy un bot de ventas, ¿En qué puedo ayudarte?",
+  { capture: true },
+  async (ctx, { state, fallBack, gotoFlow }) => {
+    //Accion a tomar si contiene una palabra clave
 
-      console.log(`[EMPRESAS]:`, empresas);
-    });
-  return salesFlow;
-}
-
-/* 
-.addAction(async (ctx, { flowDynamic, state }) => {
-  try {
-    const history = (state.getMyState()?.history ?? []) as string[];
-    const ai = history.join(" ");
-
-    console.log(`[QUE QUIERES realizar:`, ai.toLowerCase());
-
-    if (ai.toLowerCase().includes("pedido")) {
-      return flowDynamic("¡Claro! Aqui tienes el lista de productos.");
+    if (ctx.body.toLowerCase().includes(ACTIONS.ORDER)) {
+      console.log(`[ACTION]:`, ctx.body);
+      return gotoFlow(pedidosFlow);
     }
 
-    if (ai.toLowerCase().includes("factura")) {
-      return flowDynamic("¡Claro! Ingresa tu Factura.");
+    if (ctx.body.toLowerCase().includes(ACTIONS.BILL)) {
+      return gotoFlow(helloFlow); //TODO: Cambiar a facturaFlow
     }
 
-    return flowDynamic("¡Genial! ¿Qué accion deseas realizar?");
-  } catch (err) {
-    console.log(`[ERROR]:`, err);
-  }
-})
-// .addAnswer("¡Genial! ¿Qué producto deseas comprar?")
-.addAction(async (ctx, { state, gotoFlow }) => {
-  try {
-    // const products = await pixcua.getProducts();
-    const products = [
-      { name: "celular", price: 300 },
-      { name: "laptop", price: 500 },
-      { name: "tablet", price: 200 },
-    ];
-    console.log(`[PRODUCTS]:`, products);
-
-    const product = products.find((product) =>
-      ctx.body.toLowerCase().includes(product.name.toLowerCase())
+    //Si no contiene una palabra clave, ademas de listar las opciones disponibles, se le pide al usuario que ingrese una opcion valida
+    return fallBack(
+      `Eyy!bro esto no es una opcion valida! ponte serio \n\nOpciones disponibles: \n- ${ACTIONS.ORDER} \n- ${ACTIONS.BILL}`
     );
-
-    if (!product) {
-      return gotoFlow(welcomeFlow);
-    }
-
-    await state.update({ product });
-  } catch (err) {
-    console.log(`[ERROR]:`, err);
-    return;
   }
-});
- */
+);

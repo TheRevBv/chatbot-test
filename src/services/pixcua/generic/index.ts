@@ -1,10 +1,5 @@
-import sql, {
-  IResult,
-  Request,
-  config as SQLConfig,
-  ConnectionPool,
-  Transaction,
-} from "mssql";
+import sql, { IResult, config as SQLConfig, ConnectionPool } from "mssql";
+// import { Request } from "mssql";
 
 export interface DBConfig extends SQLConfig {
   user: string;
@@ -51,11 +46,13 @@ export default class GenericSQLService<T> {
   private async query(
     query: string,
     parameters: any[] = [],
-    transaction?: Transaction
+    transaction?: sql.Transaction
   ): Promise<IResult<T>> {
     const pool = await this.connect();
-    let request: Request;
-    request = transaction ? new Request(transaction) : new Request(pool);
+    let request: sql.Request;
+    request = transaction
+      ? new sql.Request(transaction)
+      : new sql.Request(pool);
 
     parameters.forEach((param) => {
       request.input(param.name, param.type, param.value);
@@ -72,11 +69,13 @@ export default class GenericSQLService<T> {
   public async executeProcedure(
     procedureName: string,
     parameters: any[] = [],
-    transaction?: Transaction
+    transaction?: sql.Transaction
   ): Promise<IResult<T>> {
     const pool = await this.connect();
-    let request: Request;
-    request = transaction ? new Request(transaction) : new Request(pool);
+    let request: sql.Request;
+    request = transaction
+      ? new sql.Request(transaction)
+      : new sql.Request(pool);
 
     parameters.forEach((param) => {
       request.input(param.name, param.type, param.value);
@@ -92,11 +91,13 @@ export default class GenericSQLService<T> {
 
   public async executeProcedureQuery(
     query: string,
-    transaction?: Transaction
+    transaction?: sql.Transaction
   ): Promise<IResult<T>> {
     const pool = await this.connect();
-    let request: Request;
-    request = transaction ? new Request(transaction) : new Request(pool);
+    let request: sql.Request;
+    request = transaction
+      ? new sql.Request(transaction)
+      : new sql.Request(pool);
     try {
       return await request.execute<T>(query);
     } catch (err) {
@@ -105,18 +106,18 @@ export default class GenericSQLService<T> {
     }
   }
 
-  public async startTransaction(): Promise<Transaction> {
+  public async startTransaction(): Promise<sql.Transaction> {
     const pool = await this.connect();
-    const transaction = new Transaction(pool);
+    const transaction = new sql.Transaction(pool);
     const trans = await transaction.begin();
     return trans;
   }
 
-  public async commitTransaction(transaction: Transaction) {
+  public async commitTransaction(transaction: sql.Transaction) {
     await transaction.commit();
   }
 
-  public async rollbackTransaction(transaction: Transaction) {
+  public async rollbackTransaction(transaction: sql.Transaction) {
     await transaction.rollback();
   }
 
@@ -124,9 +125,58 @@ export default class GenericSQLService<T> {
     return this.query(query);
   }
 
-  public async getByFx(schema: string, fxName: string): Promise<IResult<T>> {
-    const query = `SELECT * FROM ${schema}.${fxName}()`;
-    return this.query(query);
+  public async getAllFxLST(
+    parameters: any[] = [],
+    transaction?: sql.Transaction
+  ): Promise<IResult<T>> {
+    const pool = await this.connect();
+    let request = transaction
+      ? new sql.Request(transaction)
+      : new sql.Request(pool);
+
+    // Asegúrate de añadir los parámetros correctamente
+    parameters.forEach((param) => {
+      request.input(param.name, param.type, param.value);
+    });
+
+    // Asegúrate de que la consulta utiliza parámetros con nombre y no concatenación de strings
+    let query = `SELECT TOP 10 * FROM ${this.schema}.fx${this.tableName}LST(`;
+    const paramNames = parameters.map((param) => `@${param.name}`).join(", ");
+    query += paramNames + ")";
+
+    try {
+      return await request.query<T>(query);
+    } catch (err) {
+      console.error("Error ejecutando consulta:", err);
+      throw err;
+    }
+  }
+
+  public async getAllFxSEL(
+    parameters: any[] = [],
+    transaction?: sql.Transaction
+  ): Promise<IResult<T>> {
+    const pool = await this.connect();
+    let request = transaction
+      ? new sql.Request(transaction)
+      : new sql.Request(pool);
+
+    // Asegúrate de añadir los parámetros correctamente
+    parameters.forEach((param) => {
+      request.input(param.name, param.type, param.value);
+    });
+
+    // Asegúrate de que la consulta utiliza parámetros con nombre y no concatenación de strings
+    let query = `SELECT * FROM ${this.schema}.fx${this.tableName}SEL(`;
+    const paramNames = parameters.map((param) => `@${param.name}`).join(", ");
+    query += paramNames + ")";
+
+    try {
+      return await request.query<T>(query);
+    } catch (err) {
+      console.error("Error ejecutando consulta:", err);
+      throw err;
+    }
   }
 
   public async getAll(): Promise<IResult<T>> {

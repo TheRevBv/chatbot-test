@@ -3,7 +3,7 @@ import BotWhatsapp from "@bot-whatsapp/bot";
 import database from "./database";
 import provider from "./provider";
 import flow from "./flow";
-import { initServer } from "./services/http";
+import { initServer } from "@services/http";
 
 /**
  * Funcion principal del bot
@@ -11,8 +11,10 @@ import { initServer } from "./services/http";
 const main = async () => {
   const botFLow = BotWhatsapp.addKeyword("hola").addAnswer("Buenas!") as any;
 
+  console.clear();
   console.log(botFLow.toJson());
   console.log({ botFLow });
+  console.log("Hola mundo");
 
   const botInstance = await BotWhatsapp.createBot({
     database,
