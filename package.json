@@ -25,6 +25,7 @@
     "mssql": "^10.0.2",
     "openai": "^4.42.0",
     "paypal-rest-sdk": "^1.8.1",
+    "venom-bot": "^5.1.0",
     "wa-sticker-formatter": "4.3.2"
   },
   "author": "",

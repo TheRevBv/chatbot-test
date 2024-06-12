@@ -21,7 +21,6 @@
       "@middlewares/*": ["src/middlewares/*"],
       "@utils/*": ["src/utils/*"],
       "@config/*": ["src/config/*"],
-      // "@types/*": ["src/@types/*"],
       "@database/*": ["src/database/*"],
       "@provider/*": ["src/provider/*"],
       "@flow/*": ["src/flow/*"]
